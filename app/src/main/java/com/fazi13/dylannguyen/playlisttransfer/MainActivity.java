@@ -1,15 +1,14 @@
-package com.example.dylan.playlisttransfer;
+package com.fazi13.dylannguyen.playlisttransfer;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
-import android.support.annotation.MainThread;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,53 +23,105 @@ import com.spotify.sdk.android.player.PlayerEvent;
 import com.spotify.sdk.android.player.Spotify;
 import com.spotify.sdk.android.player.SpotifyPlayer;
 
-import org.w3c.dom.Text;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.ArrayList;
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class MainActivity extends Activity implements SpotifyPlayer.NotificationCallback, ConnectionStateCallback{
+    // Spotify vars
     private static final String CLIENT_ID = "5047539c966a4a5ca3e43e6b47937493";
     private static final String REDIRECT_URI = "playlisttransfer://callback";
     private static final int REQUEST_CODE = 458;
-    private String authToken = "";
+    private String spotifyToken = "";
     private Player mPlayer;
-    TcpClient mTcpClient;
-    private String[] scopes = new String[]{"user-read-private", "playlist-read-private", "playlist-read-collaborative", "user-library-read", "playlist-modify-private", "playlist-modify-public"};
+    private String[] spotifyScopes = new String[]{"user-read-private", "playlist-read-private", "playlist-read-collaborative", "user-library-read", "playlist-modify-private", "playlist-modify-public"};
+    // OkHTTP vars
+    private static final String IP_ADDRESS = "http://192.168.0.116/";
+    private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+    OkHttpClient client;
+    // YouTube vars
+
+    // Export vars
+    String exportFromHere;
+    String exportToHere;
+
+    // Activity vars
+    public static final String EXTRA_IP_ADDRESS = "com.fazi13.dylannguyen.playlisttransfer.IP_ADDRESS";
+    public static final String SPOTIFY_TO_TEXT_TOKEN = "com.fazi13.dylannguyen.playlisttransfer.SPOTIFY_TOKEN";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         TextView titleWindow = findViewById(R.id.titleWindow);
-        TextView messageWindow = findViewById(R.id.messageWindow);
+        final TextView messageWindow = findViewById(R.id.messageWindow);
         TextView loginText = findViewById(R.id.loginText);
         ImageButton SpotifyLoginButton = findViewById(R.id.SpotifyLoginBtn);
         ImageButton YouTubeLoginButton = findViewById(R.id.YouTubeLoginBtn);
         ImageButton exportButton = findViewById(R.id.exportBtn);
-        new ConnectTask().execute("");
-        Log.d("MainActivity", "Connect to server");
+        Spinner fromSpinner = findViewById(R.id.fromSpinner);
+        Spinner toSpinner = findViewById(R.id.toSpinner);
+        client = new OkHttpClient();
 
         loginText.setText("Please login:");
         titleWindow.setText("Output:");
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.options, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        fromSpinner.setAdapter(adapter);
+        fromSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                exportFromHere = adapterView.getItemAtPosition(i).toString();
+                Log.d("MainActivity", "User chose from: " + exportFromHere);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+
+        toSpinner.setAdapter(adapter);
+        toSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener(){
+
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                exportToHere = adapterView.getItemAtPosition(i).toString();
+                Log.d("MainActivity", "User chose to: " + exportToHere);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+
+        /*
         StringBuilder stringBuilder = new StringBuilder();
         String someMessage = "This is some message. ";
         for(int i = 0; i < 100; i++){
             stringBuilder.append(someMessage);
         }
         messageWindow.setText(stringBuilder.toString());
+        */
 
-        // Spotify Authentication
+        // Spotify Login Button
         SpotifyLoginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 AuthenticationRequest.Builder builder = new AuthenticationRequest.Builder(CLIENT_ID, AuthenticationResponse.Type.TOKEN, REDIRECT_URI);
-                builder.setScopes(scopes);
+                builder.setScopes(spotifyScopes);
                 AuthenticationRequest request = builder.build();
-
                 AuthenticationClient.openLoginActivity(MainActivity.this, REQUEST_CODE, request);
             }
         });
@@ -79,69 +130,42 @@ public class MainActivity extends Activity implements SpotifyPlayer.Notification
         exportButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view){
-                //new SendData().execute(authToken);
-                //Log.d("ExportButton", "Sent token: " + authToken);
-                if (mTcpClient != null) {
-                    mTcpClient.sendMessage(authToken);
-                }
-                Log.d("ExportButton", "Sent msg to server");
-                //new ConnectTask().execute("");
-                //mTCPClient.sendMessage(authToken);
-                /*
-                Runnable background = new Runnable() {
-                    @Override
-                    public void run() {
-                        ReceiveData rd = new ReceiveData();
-                        rd.run();
-                        new SendData().execute(authToken);
-                        Log.d("ExportButton", "Sent token: " + authToken);
-                        String msg = rd.getMsg();
-                        Log.d("ExportButton", "Received: " + msg);
+                // Spotify playlist to Text File
+                if(exportFromHere.equalsIgnoreCase("spotify") && exportToHere.equalsIgnoreCase("text file")){
+                    // Check if logged in
+                    if(!checkSpotifyLogin()){
+                        return;
                     }
-                };
-                new Thread(background).start();
-                */
+                    // Send Spotify auth token to SpotifyToText
+                    openSpotifyToText();
+                }
             }
         });
-
-        // Receive data
-
-
     }
 
-    public class ConnectTask extends AsyncTask<String, String, TcpClient> {
+    public void openSpotifyToText(){
+        Intent intent = new Intent(this, SpotifyToText.class);
+        intent.putExtra(EXTRA_IP_ADDRESS, IP_ADDRESS);
+        intent.putExtra(SPOTIFY_TO_TEXT_TOKEN, spotifyToken);
+        startActivity(intent);
+        Log.d("MainActivity", "Started S2T");
+    }
 
-        @Override
-        protected TcpClient doInBackground(String... message) {
-
-            //we create a TCPClient object
-            mTcpClient = new TcpClient(new TcpClient.OnMessageReceived() {
-                @Override
-                //here the messageReceived method is implemented
-                public void messageReceived(String message) {
-                    //this method calls the onProgressUpdate
-                    publishProgress(message);
-                }
-            });
-            mTcpClient.run();
-
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(final String... values) {
-            super.onProgressUpdate(values);
-            //response received from server
-            Log.d("test", "response " + values[0]);
-            //process server response here....
+    private boolean checkSpotifyLogin(){
+        if(spotifyToken.equals("")){
+            Log.e("MainActivity", "No Spotify token");
+            Toast.makeText(getApplicationContext(), "Please login first", Toast.LENGTH_SHORT).show();
             MainActivity.this.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     TextView messageWindow = findViewById(R.id.messageWindow);
-                    messageWindow.setText(values[0]);
+                    String text = messageWindow.getText().toString();
+                    messageWindow.setText(text + "Please login to Spotify first.\n");
                 }
             });
+            return false;
         }
+        return true;
     }
 
     @Override
@@ -151,8 +175,8 @@ public class MainActivity extends Activity implements SpotifyPlayer.Notification
         if (requestCode == REQUEST_CODE) {
             AuthenticationResponse response = AuthenticationClient.getResponse(resultCode, intent);
             if (response.getType() == AuthenticationResponse.Type.TOKEN) {
-                authToken = response.getAccessToken();
-                Config playerConfig = new Config(this, authToken, CLIENT_ID);
+                spotifyToken = response.getAccessToken();
+                Config playerConfig = new Config(this, spotifyToken, CLIENT_ID);
                 Spotify.getPlayer(playerConfig, this, new SpotifyPlayer.InitializationObserver() {
                     @Override
                     public void onInitialized(SpotifyPlayer spotifyPlayer) {
@@ -167,6 +191,18 @@ public class MainActivity extends Activity implements SpotifyPlayer.Notification
                     }
                 });
             }
+        }
+
+        if(spotifyToken.equals("")){
+            Toast.makeText(getApplicationContext(), "Login Failed", Toast.LENGTH_SHORT).show();
+            MainActivity.this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    TextView messageWindow = findViewById(R.id.messageWindow);
+                    String text = messageWindow.getText().toString();
+                    messageWindow.setText(text + "Login Failed. Try logging out of the Spotify App.\n");
+                }
+            });
         }
     }
 
@@ -198,9 +234,20 @@ public class MainActivity extends Activity implements SpotifyPlayer.Notification
 
     @Override
     public void onLoggedIn() {
-        Log.d("MainActivity", "User logged in");
-        TextView loginText = findViewById(R.id.loginText);
-        loginText.setText("Logged in");
+        Log.d("MainActivity", "User logged into Spotify");
+        //TextView loginText = findViewById(R.id.loginText);
+        //loginText.setText("Logged in");
+        TextView messageWindow = findViewById(R.id.messageWindow);
+        String text = messageWindow.getText().toString();
+        messageWindow.setText(text + "Logged into Spotify.\n");
+        /*
+        MainActivity.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+            }
+        });
+        */
         Toast.makeText(getApplicationContext(), "Logged in", Toast.LENGTH_SHORT).show();
     }
 

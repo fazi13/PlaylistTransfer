@@ -25,6 +25,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="20dp"
                 android:id="@+id/loginText"/>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -51,9 +52,45 @@
                     android:src="@drawable/ic_youtube_logo" />
 
             </LinearLayout>
-        </LinearLayout>
-    </RelativeLayout>
 
+
+        </LinearLayout>
+
+
+
+    </RelativeLayout>
+    <RelativeLayout
+        android:layout_weight=".75"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:text="Export From:"/>
+            <Spinner
+                android:id="@+id/fromSpinner"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentTop="true"
+                android:text="To:"/>
+            <Spinner
+                android:id="@+id/toSpinner"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_gravity="right"/>
+        </LinearLayout>
+
+    </RelativeLayout>
     <RelativeLayout
         android:layout_weight=".75"
         android:layout_width="match_parent"
@@ -61,8 +98,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="horizontal"
-            android:gravity="right">
+            android:orientation="horizontal">
 
             <ImageButton
                 android:id="@+id/exportBtn"

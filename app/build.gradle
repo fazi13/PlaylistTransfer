@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 28
     defaultConfig {
-        applicationId "com.example.dylan.playlisttransfer"
+        applicationId "com.fazi13.dylannguyen.playlisttransfer"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 1
@@ -34,4 +34,14 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation 'com.spotify.android:auth:1.0.0-alpha'
     implementation 'com.spotify.sdk:spotify-player-24-noconnect-2.20b@aar'
+    implementation 'com.squareup.okhttp3:okhttp:3.10.0'
+    implementation 'com.google.android.gms:play-services-auth:15.0.1'
+    implementation 'pub.devrel:easypermissions:0.3.0'
+    implementation('com.google.api-client:google-api-client-android:1.23.0') {
+        exclude group: 'org.apache.httpcomponents'
+    }
+    implementation('com.google.apis:google-api-services-youtube:v3-rev204-1.23.0') {
+        exclude group: 'org.apache.httpcomponents'
+    }
+    implementation 'com.google.code.gson:gson:2.8.5'
 }

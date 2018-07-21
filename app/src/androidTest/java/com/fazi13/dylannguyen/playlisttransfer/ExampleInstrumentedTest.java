@@ -1,4 +1,4 @@
-package com.example.dylan.playlisttransfer;
+package com.fazi13.dylannguyen.playlisttransfer;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

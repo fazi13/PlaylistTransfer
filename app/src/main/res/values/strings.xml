@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">PlaylistTransfer</string>
+    <string-array name="options">
+        <item>Select...</item>
+        <item>Spotify</item>
+        <item>YouTube</item>
+        <item>Text File</item>
+    </string-array>
 </resources>
