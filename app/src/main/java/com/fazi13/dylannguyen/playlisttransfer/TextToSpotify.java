@@ -30,6 +30,7 @@ public class TextToSpotify extends Activity {
     // Text File vars
     private File externalDir;
     private File myExternalFile;
+    private File importFile;
     private String tracksStr;
     private int tracksSize;
     private final String FILE_PATH = "PlaylistTransfer/Import";
