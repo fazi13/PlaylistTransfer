@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
@@ -40,43 +41,61 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class SpotifyToText extends Activity {
-    // Spotify Vars
+    // Spotify vars
     private String spotifyToken = "";
     private String playlistSelected = "";
 
-    // Text File Vars
-    private final String FILE_PATH = "/PlaylistTransfer/";
+    // Text File vars
+    private File externalDir;
+    private File myExternalFile;
+    private String tracksStr;
+    private int tracksSize;
+    private final String FILE_PATH = "PlaylistTransfer/Spotify Export";
 
-    // OkHTTP Vars
-    private static String IP_ADDRESS;
-    private static MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-    OkHttpClient client;
+    // Server vars
+    private static final String IP_ADDRESS = MainActivity.IP_ADDRESS;
+    private static final MediaType JSON = MainActivity.JSON;
+    private OkHttpClient client;
+
+    // UI vars
+    private TextView messageWindow;
+    private ImageButton exportButton;
+    private boolean firstExport;
+    private String exportedPlaylists;
+    private final String exportedNothing = "\t\t\tTransferred: nothing";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_spotify_to_text);
 
+        setTitle("Spotify to Text File");
+
         Intent intent = getIntent();
-        IP_ADDRESS = intent.getStringExtra(MainActivity.EXTRA_IP_ADDRESS);
         spotifyToken = intent.getStringExtra(MainActivity.SPOTIFY_TO_TEXT_TOKEN);
 
         TextView titleWindow = findViewById(R.id.titleWindow);
-        final TextView messageWindow = findViewById(R.id.messageWindow);
+        messageWindow = findViewById(R.id.messageWindow);
         final Spinner playlistSpinner = findViewById(R.id.playlistSpinner);
-        ImageButton exportButton = findViewById(R.id.exportBtn);
+        exportButton = findViewById(R.id.exportBtn);
+
+        firstExport = true;
+        exportedPlaylists = "\t\t\tTransferred to Text File: ";
+
         client = new OkHttpClient();
+
+
         titleWindow.setText("Output:");
         messageWindow.setText("Getting Spotify Playlists from Server.\n");
 
-        getSpotifyPlaylists();
+        SpotifyHelper.getSpotifyPlaylists(spotifyToken, SpotifyToText.this);
 
         playlistSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 playlistSelected = adapterView.getItemAtPosition(i).toString();
-                Log.d("MainActivity", "User chose playlist: " + playlistSelected);
+                Log.d("SpotifyToText", "User chose playlist: " + playlistSelected);
             }
 
             @Override
@@ -88,84 +107,31 @@ public class SpotifyToText extends Activity {
         exportButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String text = messageWindow.getText().toString();
+                // disable export button while waiting for response from server
+                exportButton.setEnabled(false);
+                exportButton.setVisibility(View.GONE);
+                String text = "";
+                if(firstExport){
+                    text = messageWindow.getText().toString();
+                }
                 messageWindow.setText(text + "Getting Data from Server...\n");
                 getSpotifyTracks();
             }
         });
     }
 
-    private void getSpotifyPlaylists(){
-        JSONObject jsonObject = new JSONObject();
-        try {
-            jsonObject.put("spotify_token", spotifyToken);
-        } catch (JSONException e) {
-            e.printStackTrace();
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent();
+        if(firstExport){
+            intent.putExtra(MainActivity.SPOTIFY_TO_TEXT_PLAYLISTS, exportedNothing);
+            setResult(RESULT_CANCELED, intent);
+            finish();
+        } else {
+            intent.putExtra(MainActivity.SPOTIFY_TO_TEXT_PLAYLISTS, exportedPlaylists);
+            setResult(RESULT_OK, intent);
+            finish();
         }
-        Log.d("SpotifyToTextResponse", jsonObject.toString());
-        RequestBody requestBody = RequestBody.create(JSON, jsonObject.toString());
-        Request request = new Request.Builder()
-                .url(IP_ADDRESS + "get_spotify_playlists")
-                .post(requestBody)
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                Log.e("SpotifyToTextCall", e.toString());
-                SpotifyToText.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        TextView messageWindow = findViewById(R.id.messageWindow);
-                        String text = messageWindow.getText().toString();
-                        messageWindow.setText(text + "An Error Occurred with the Server.\n");
-                    }
-                });
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                //Log.d("ExportButton", response.body().string());
-                if(response.isSuccessful()){
-                    final String myResponse = response.body().string();
-                    SpotifyToText.this.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            TextView messageWindow = findViewById(R.id.messageWindow);
-                            String text = messageWindow.getText().toString();
-                            Log.d("SpotifyToTextResponse", myResponse);
-                            messageWindow.setText(text + "Received Spotify Playlists from Server.\n");
-                            setPlaylistSpinner(myResponse);
-                        }
-                    });
-                } else {
-                    Log.e("SpotifyToTextResponse", response.toString());
-                    SpotifyToText.this.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            TextView messageWindow = findViewById(R.id.messageWindow);
-                            String text = messageWindow.getText().toString();
-                            messageWindow.setText(text + "An Error Occurred with the Server.\n");
-                        }
-                    });
-                }
-            }
-        });
-    }
-
-    private void setPlaylistSpinner(String playlist){
-        HashMap<String,String> playlist_map = new Gson().fromJson(playlist, new TypeToken<HashMap<String, String>>(){}.getType());
-        String playlistStr = playlist_map.get("Spotify Playlists");
-        final String[] playlists = playlistStr.split(", ");
-        SpotifyToText.this.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(SpotifyToText.this,android.R.layout.simple_spinner_item, playlists);
-                arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                Spinner playlistSpinner = findViewById(R.id.playlistSpinner);
-                playlistSpinner.setAdapter(arrayAdapter);
-            }
-        });
     }
 
     private String[] parseTracksJSON(String tracksJSON){
@@ -240,13 +206,14 @@ public class SpotifyToText extends Activity {
 
     private void getSpotifyTracks(){
         JSONObject jsonObject = new JSONObject();
+
         try {
             jsonObject.put("spotify_token", spotifyToken);
             jsonObject.put("playlist_name", playlistSelected);
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        Log.d("SpotifyToTextResponse", jsonObject.toString());
+
         RequestBody requestBody = RequestBody.create(JSON, jsonObject.toString());
         Request request = new Request.Builder()
                 .url(IP_ADDRESS + "get_spotify_tracks")
@@ -256,40 +223,62 @@ public class SpotifyToText extends Activity {
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
+                resetExportButton();
                 Log.e("SpotifyToTextCall", e.toString());
                 SpotifyToText.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        TextView messageWindow = findViewById(R.id.messageWindow);
+                        //TextView messageWindow = findViewById(R.id.messageWindow);
                         String text = messageWindow.getText().toString();
-                        messageWindow.setText(text + "An Error Occurred with the Server.\n");
+                        messageWindow.setText(text + "An Error Occurred Connecting to the Server.\n");
                     }
                 });
             }
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                //Log.d("ExportButton", response.body().string());
+                resetExportButton();
+                SpotifyToText.this.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String text = messageWindow.getText().toString();
+                        messageWindow.setText(text + "Received Data from Server. Exporting...\n");
+                    }
+                });
                 if(response.isSuccessful()){
-                    final String myResponse = response.body().string();
-                    SpotifyToText.this.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            TextView messageWindow = findViewById(R.id.messageWindow);
-                            String text = messageWindow.getText().toString();
-                            Log.d("SpotifyToTextResponse", myResponse);
-                            String[] tracks = parseTracksJSON(myResponse);
-                            String trackStr = tracksToString(tracks);
-                            saveToFile(playlistSelected + ".txt", trackStr);
-                            messageWindow.setText(text + "Exported " + countPlaylistSize(tracks) + " Songs from \"" + playlistSelected + "\":\n\n" + trackStr);
+                    Log.d("SpotifyToTextResponse", response.toString());
+                    String myResponse = response.body().string();
+                    String[] tracks = parseTracksJSON(myResponse);
+                    tracksStr = tracksToString(tracks);
+                    tracksSize = countPlaylistSize(tracks);
+                    exportedPlaylists += "\"" + playlistSelected + "\", ";
+
+                    // save to PlaylistTransfer folder in external storage directory
+                    externalDir = new File(Environment.getExternalStorageDirectory(), FILE_PATH);
+                    if(!externalDir.exists()){
+                        Log.d("SpotifyToText", "Created playlists directory");
+                        externalDir.mkdirs();
+                    }
+                    // check if external storage is accessible
+                    if(isExternalStorageAvailable()){
+                        myExternalFile = new File(externalDir, playlistSelected + ".txt");
+                        Log.d("SpotifyToText", "Storage is available");
+                        // check for write permissions
+                        if(!checkWritePermissions()){
+                            Log.d("SpotifyToText", "Requesting write permissions");
+                            requestWritePermissions();
+                            writeTracksToFile();
+                        } else {
+                            Log.d("SpotifyToText", "Write permissions already given");
+                            writeTracksToFile();
                         }
-                    });
+                    }
                 } else {
                     Log.e("SpotifyToTextResponse", response.toString());
                     SpotifyToText.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            TextView messageWindow = findViewById(R.id.messageWindow);
+                            //TextView messageWindow = findViewById(R.id.messageWindow);
                             String text = messageWindow.getText().toString();
                             messageWindow.setText(text + "An Error Occurred with the Server.\n");
                         }
@@ -299,70 +288,89 @@ public class SpotifyToText extends Activity {
         });
     }
 
-    private boolean isExternalStorageWritable() {
-        String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
+    // re-enable export button after getting response from server
+    private void resetExportButton(){
+        SpotifyToText.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                exportButton.setEnabled(true);
+                exportButton.setVisibility(View.VISIBLE);
+                Log.d("SpotifyToText", "Reset export button");
+            }
+        });
+    }
+
+    private static boolean isExternalStorageAvailable() {
+        String extStorageState = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(extStorageState)) {
             return true;
         }
         return false;
     }
 
-    public File getPublicStorageDir(String filename) {
-        // Get the directory for the user's public pictures directory.
-        File file = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_DOCUMENTS), filename);
-        if (!file.mkdirs()) {
-            Log.e("SpotifyToText", "Directory not created");
-        }
-        return file;
+    private boolean checkWritePermissions() {
+        int result = ContextCompat.checkSelfPermission(SpotifyToText.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        return (result == PackageManager.PERMISSION_GRANTED);
     }
 
-    private boolean checkPermissions(String permission){
-        int res = SpotifyToText.this.getApplicationContext().checkCallingOrSelfPermission(permission);
-        return (res == PackageManager.PERMISSION_GRANTED);
+    private void requestWritePermissions() {
+        ActivityCompat.requestPermissions(SpotifyToText.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 458);
     }
 
-    private void saveToFile(final String filename, String text){
-        // Not able to write file
-        if(!isExternalStorageWritable()){
-            Log.e("SpotifyToText", "Storage not found");
-            return;
-        }
-        if(checkPermissions(Manifest.permission.WRITE_EXTERNAL_STORAGE)){
-            FileOutputStream fos = null;
-            PrintWriter pw = null;
-            File file = getPublicStorageDir(filename);
-            try {
-                fos = new FileOutputStream(file);
-                pw = new PrintWriter(fos);
-                pw.print(text);
-                SpotifyToText.this.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        TextView messageWindow = findViewById(R.id.messageWindow);
-                        String text = messageWindow.getText().toString();
-                        messageWindow.setText(text + "Exported to: " + getFilesDir() + "/" + FILE_PATH + filename);
-                        Toast.makeText(getApplicationContext(), "Export Successful", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            } catch (FileNotFoundException e) {
-                Log.e("SpotifyToText", e.toString());
-            } finally {
-                if(pw != null){
-                    pw.close();
+    private void writeTracksToFile(){
+        FileOutputStream fos = null;
+        try {
+            myExternalFile.createNewFile();
+            fos = new FileOutputStream(myExternalFile);
+            fos.write(tracksStr.getBytes());
+            Log.d("SpotifyToText", "File written success");
+            SpotifyToText.this.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    String text = messageWindow.getText().toString();
+                    text += "\nExported playlist to: \"" + "/" + FILE_PATH + "/" + playlistSelected + ".txt\"\n";
+                    text += "Exported " + tracksSize + " Songs from \"" + playlistSelected + "\":\n\n" + tracksStr;
+                    messageWindow.setText(text);
                 }
-                if (fos != null) {
-                    try {
-                        fos.close();
-                    } catch (IOException e) {
-                        Log.e("SpotifyToText", e.toString());
-                    }
+            });
+            firstExport = false;
+        } catch (IOException e) {
+            Log.e("SpotifyToText", e.toString());
+        } finally {
+            try {
+                if(fos != null){
+                    fos.close();
+                }
+            } catch (IOException e) {
+                Log.e("SpotifyToText", e.toString());
+            }
+        }
+    }
+
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            // 458 is my code for write permissions
+            case 458: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // permission was granted, yay!
+                    writeTracksToFile();
+                } else {
+                    Log.d("SpotifyToText", "No permissions given");
+                    SpotifyToText.this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            String text = messageWindow.getText().toString();
+                            messageWindow.setText(text + "Error, please give write permissions\n");
+                        }
+                    });
                 }
             }
-        } else {
-            Log.e("SpotifyToText", "Permission denied");
-            return;
         }
-
+        return;
     }
 }

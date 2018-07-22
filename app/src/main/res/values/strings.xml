@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PlaylistTransfer</string>
+    <string name="app_name">Playlist Transfer</string>
     <string-array name="options">
         <item>Select...</item>
         <item>Spotify</item>

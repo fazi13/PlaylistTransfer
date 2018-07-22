@@ -17,15 +17,15 @@
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
             android:name="com.spotify.sdk.android.authentication.LoginActivity"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-        <activity android:name=".PlaylistSelect" />
-        <activity android:name=".SpotifyToText"></activity>
+        <activity android:name=".SpotifyToText" />
+        <activity android:name=".TextToSpotify"
+            android:windowSoftInputMode="adjustPan"/>
     </application>
 
 </manifest>
