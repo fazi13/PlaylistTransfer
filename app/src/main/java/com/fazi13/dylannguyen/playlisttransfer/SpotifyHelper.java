@@ -36,7 +36,7 @@ public class SpotifyHelper {
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        Log.d("SpotifyHelper.java", jsonObject.toString());
+
         RequestBody requestBody = RequestBody.create(MainActivity.JSON, jsonObject.toString());
         Request request = new Request.Builder()
                 .url(MainActivity.IP_ADDRESS + "get_spotify_playlists")

@@ -60,7 +60,7 @@ public class SpotifyToText extends Activity {
     // UI vars
     private TextView messageWindow;
     private ImageButton exportButton;
-    private boolean firstExport;
+    private boolean isFirstExport;
     private String exportedPlaylists;
     private final String exportedNothing = "\t\t\tTransferred: nothing";
 
@@ -79,7 +79,7 @@ public class SpotifyToText extends Activity {
         final Spinner playlistSpinner = findViewById(R.id.playlistSpinner);
         exportButton = findViewById(R.id.exportBtn);
 
-        firstExport = true;
+        isFirstExport = true;
         exportedPlaylists = "\t\t\tTransferred to Text File: ";
 
         client = new OkHttpClient();
@@ -111,7 +111,7 @@ public class SpotifyToText extends Activity {
                 exportButton.setEnabled(false);
                 exportButton.setVisibility(View.GONE);
                 String text = "";
-                if(firstExport){
+                if(isFirstExport){
                     text = messageWindow.getText().toString();
                 }
                 messageWindow.setText(text + "Getting Data from Server...\n");
@@ -123,7 +123,7 @@ public class SpotifyToText extends Activity {
     @Override
     public void onBackPressed() {
         Intent intent = new Intent();
-        if(firstExport){
+        if(isFirstExport){
             intent.putExtra(MainActivity.SPOTIFY_TO_TEXT_PLAYLISTS, exportedNothing);
             setResult(RESULT_CANCELED, intent);
             finish();
@@ -256,17 +256,17 @@ public class SpotifyToText extends Activity {
                     // save to PlaylistTransfer folder in external storage directory
                     externalDir = new File(Environment.getExternalStorageDirectory(), FILE_PATH);
                     if(!externalDir.exists()){
-                        Log.d("SpotifyToText", "Created playlists directory");
+                        Log.d("SpotifyToText", "Created export directory");
                         externalDir.mkdirs();
                     }
                     // check if external storage is accessible
-                    if(isExternalStorageAvailable()){
+                    if(FileIOHelper.isExternalStorageAvailable()){
                         myExternalFile = new File(externalDir, playlistSelected + ".txt");
                         Log.d("SpotifyToText", "Storage is available");
                         // check for write permissions
-                        if(!checkWritePermissions()){
+                        if(!FileIOHelper.checkWritePermissions(SpotifyToText.this)){
                             Log.d("SpotifyToText", "Requesting write permissions");
-                            requestWritePermissions();
+                            FileIOHelper.requestWritePermissions(SpotifyToText.this, 458);
                             writeTracksToFile();
                         } else {
                             Log.d("SpotifyToText", "Write permissions already given");
@@ -300,6 +300,7 @@ public class SpotifyToText extends Activity {
         });
     }
 
+    /*
     private static boolean isExternalStorageAvailable() {
         String extStorageState = Environment.getExternalStorageState();
         if (Environment.MEDIA_MOUNTED.equals(extStorageState)) {
@@ -316,6 +317,7 @@ public class SpotifyToText extends Activity {
     private void requestWritePermissions() {
         ActivityCompat.requestPermissions(SpotifyToText.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 458);
     }
+    */
 
     private void writeTracksToFile(){
         FileOutputStream fos = null;
@@ -333,7 +335,7 @@ public class SpotifyToText extends Activity {
                     messageWindow.setText(text);
                 }
             });
-            firstExport = false;
+            isFirstExport = false;
         } catch (IOException e) {
             Log.e("SpotifyToText", e.toString());
         } finally {
