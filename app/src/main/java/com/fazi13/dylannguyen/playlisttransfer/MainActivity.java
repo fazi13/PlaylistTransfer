@@ -1,8 +1,8 @@
 package com.fazi13.dylannguyen.playlisttransfer;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
@@ -61,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
     private PopupWindow popupWindow;
     private LayoutInflater layoutInflater;
     private LinearLayout linearLayout;
+    private boolean doubleBackToExitPressedOnce;
 
 
     // Activity vars
@@ -73,6 +74,7 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         // Add custom toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -86,6 +88,7 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
         Spinner fromSpinner = findViewById(R.id.fromSpinner);
         Spinner toSpinner = findViewById(R.id.toSpinner);
         linearLayout = findViewById(R.id.mainLayout);
+        doubleBackToExitPressedOnce  = false;
 
         loginText.setText("Please login:");
         titleWindow.setText("Output:");
@@ -382,5 +385,24 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
     @Override
     public void onConnectionMessage(String message) {
         Log.d("MainActivity", "Received connection message: " + message);
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (doubleBackToExitPressedOnce) {
+            super.onBackPressed();
+            return;
+        }
+
+        this.doubleBackToExitPressedOnce = true;
+        Toast.makeText(this, "Press BACK again to exit", Toast.LENGTH_SHORT).show();
+
+        new Handler().postDelayed(new Runnable() {
+
+            @Override
+            public void run() {
+                doubleBackToExitPressedOnce=false;
+            }
+        }, 2000);
     }
 }

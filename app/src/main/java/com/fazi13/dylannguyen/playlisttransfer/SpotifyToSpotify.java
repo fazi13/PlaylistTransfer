@@ -1,6 +1,5 @@
 package com.fazi13.dylannguyen.playlisttransfer;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -70,6 +69,7 @@ public class SpotifyToSpotify extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_spotify_to_spotify);
+
         // Add custom toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
