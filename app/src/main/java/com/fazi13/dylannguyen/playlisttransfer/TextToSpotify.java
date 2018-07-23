@@ -185,8 +185,12 @@ public class TextToSpotify extends AppCompatActivity {
                 // Disable export button while waiting for response from server
                 exportButton.setEnabled(false);
                 exportButton.setVisibility(View.INVISIBLE);
-                String text = messageWindow.getText().toString();
-                messageWindow.setText(text + "Sending Data to Server...\n");
+                // Reset output window for new exports
+                String text = "";
+                if(isFirstExport){
+                    text = messageWindow.getText().toString();
+                }
+                messageWindow.setText(text + "Getting Data from Server...\n");
                 Log.d("TextToSpotify", "New playlist: " + Boolean.toString(isNewPlaylist));
                 if(isNewPlaylist){
                     playlistSelected = newPlaylistText.getText().toString();

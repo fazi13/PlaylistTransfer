@@ -83,7 +83,6 @@ public class MainActivity extends AppCompatActivity implements SpotifyPlayer.Not
         messageWindow = findViewById(R.id.messageWindow);
         TextView loginText = findViewById(R.id.loginText);
         ImageButton SpotifyLoginButton = findViewById(R.id.SpotifyLoginBtn);
-        ImageButton YouTubeLoginButton = findViewById(R.id.YouTubeLoginBtn);
         ImageButton exportButton = findViewById(R.id.exportBtn);
         Spinner fromSpinner = findViewById(R.id.fromSpinner);
         Spinner toSpinner = findViewById(R.id.toSpinner);

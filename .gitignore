@@ -8,3 +8,12 @@
 /build
 /captures
 .externalNativeBuild
+feature graphic.png
+feature graphic.psd
+screenshots/Screenshot_20180723-053256.png
+screenshots/Screenshot_20180723-053318.png
+screenshots/Screenshot_20180723-053347.png
+screenshots/Screenshot_20180723-054023.png
+screenshots/Screenshot_20180723-054042.png
+app/release/app-release.apk
+app/release/output.json
