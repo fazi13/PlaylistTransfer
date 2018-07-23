@@ -60,6 +60,7 @@ public class SpotifyToText extends Activity {
     // UI vars
     private TextView messageWindow;
     private ImageButton exportButton;
+    private Spinner playlistSpinner;
     private boolean isFirstExport;
     private String exportedPlaylists;
     private final String exportedNothing = "\t\t\tTransferred: nothing";
@@ -72,11 +73,11 @@ public class SpotifyToText extends Activity {
         setTitle("Spotify to Text File");
 
         Intent intent = getIntent();
-        spotifyToken = intent.getStringExtra(MainActivity.SPOTIFY_TO_TEXT_TOKEN);
+        spotifyToken = intent.getStringExtra(MainActivity.SPOTIFY_TOKEN);
 
         TextView titleWindow = findViewById(R.id.titleWindow);
         messageWindow = findViewById(R.id.messageWindow);
-        final Spinner playlistSpinner = findViewById(R.id.playlistSpinner);
+        playlistSpinner = findViewById(R.id.playlistSpinner);
         exportButton = findViewById(R.id.exportBtn);
 
         isFirstExport = true;
@@ -88,7 +89,7 @@ public class SpotifyToText extends Activity {
         titleWindow.setText("Output:");
         messageWindow.setText("Getting Spotify Playlists from Server.\n");
 
-        SpotifyHelper.getSpotifyPlaylists(spotifyToken, SpotifyToText.this);
+        // Set Spotify Playlist Spinner
 
         playlistSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
@@ -107,9 +108,11 @@ public class SpotifyToText extends Activity {
         exportButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // disable export button while waiting for response from server
+                // Disable export button while waiting for response from server
                 exportButton.setEnabled(false);
                 exportButton.setVisibility(View.GONE);
+
+                // Reset output window for new exports
                 String text = "";
                 if(isFirstExport){
                     text = messageWindow.getText().toString();
@@ -120,20 +123,15 @@ public class SpotifyToText extends Activity {
         });
     }
 
+    // Refresh Spotify Playlists
     @Override
-    public void onBackPressed() {
-        Intent intent = new Intent();
-        if(isFirstExport){
-            intent.putExtra(MainActivity.SPOTIFY_TO_TEXT_PLAYLISTS, exportedNothing);
-            setResult(RESULT_CANCELED, intent);
-            finish();
-        } else {
-            intent.putExtra(MainActivity.SPOTIFY_TO_TEXT_PLAYLISTS, exportedPlaylists);
-            setResult(RESULT_OK, intent);
-            finish();
-        }
+    public void onResume(){
+        super.onResume();
+        SpotifyHelper.getSpotifyPlaylists(spotifyToken, SpotifyToText.this, playlistSpinner);
     }
 
+    // Created a custom JSON parser for JSON Array of Tracks
+    // Returns tracks in form of "Artist - Track Name"
     private String[] parseTracksJSON(String tracksJSON){
         tracksJSON = tracksJSON.replaceAll("\"Tracks\":", "");
         tracksJSON = tracksJSON.replaceAll("\\{", "");
@@ -169,6 +167,7 @@ public class SpotifyToText extends Activity {
                 name = split[1].replace("\"", "");
                 i++;
             }
+
             // Check if track name had a comma
             if(i < tracksSplit.length) {
                 split = tracksSplit[i].split(":");
@@ -184,6 +183,7 @@ public class SpotifyToText extends Activity {
         return tracks;
     }
 
+    // Converts Tracks Array to String
     private String tracksToString(String[] tracks){
         String s = "";
         for(int i = 0; i < tracks.length; i++){
@@ -204,9 +204,10 @@ public class SpotifyToText extends Activity {
         return count;
     }
 
+    // Get Spotify Playlist Tracks from server
     private void getSpotifyTracks(){
+        // Create JSON object to send to server
         JSONObject jsonObject = new JSONObject();
-
         try {
             jsonObject.put("spotify_token", spotifyToken);
             jsonObject.put("playlist_name", playlistSelected);
@@ -214,12 +215,14 @@ public class SpotifyToText extends Activity {
             Log.e("SpotifyToText", e.toString());
         }
 
+        // Add JSON object and IP Address for request
         RequestBody requestBody = RequestBody.create(JSON, jsonObject.toString());
         Request request = new Request.Builder()
                 .url(IP_ADDRESS + "get_spotify_tracks")
                 .post(requestBody)
                 .build();
 
+        // Start requesting data from server
         client.newCall(request).enqueue(new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -247,22 +250,24 @@ public class SpotifyToText extends Activity {
                 if(response.isSuccessful()){
                     Log.d("SpotifyToTextResponse", response.toString());
                     String myResponse = response.body().string();
+                    // Parse JSON received from server to tracks array
                     String[] tracks = parseTracksJSON(myResponse);
+                    // Convert to String to output and write to file
                     tracksStr = tracksToString(tracks);
                     tracksSize = countPlaylistSize(tracks);
                     exportedPlaylists += "\"" + playlistSelected + "\", ";
 
-                    // save to PlaylistTransfer folder in external storage directory
+                    // Save to PlaylistTransfer folder in external storage directory
                     externalDir = new File(Environment.getExternalStorageDirectory(), FILE_PATH);
                     if(!externalDir.exists()){
                         Log.d("SpotifyToText", "Created export directory");
                         externalDir.mkdirs();
                     }
-                    // check if external storage is accessible
+                    // Check if external storage is accessible
                     if(FileIOHelper.isExternalStorageAvailable()){
                         myExternalFile = new File(externalDir, playlistSelected + ".txt");
                         Log.d("SpotifyToText", "Storage is available");
-                        // check for write permissions
+                        // Check for write permissions
                         if(!FileIOHelper.checkWritePermissions(SpotifyToText.this)){
                             Log.d("SpotifyToText", "Requesting write permissions");
                             FileIOHelper.requestWritePermissions(SpotifyToText.this, 458);
@@ -286,7 +291,7 @@ public class SpotifyToText extends Activity {
         });
     }
 
-    // re-enable export button after getting response from server
+    // Re-enable export button after getting response from server
     private void resetExportButton(){
         SpotifyToText.this.runOnUiThread(new Runnable() {
             @Override
@@ -298,6 +303,7 @@ public class SpotifyToText extends Activity {
         });
     }
 
+    // Writes tracksStr to file as "Playlist Name.txt"
     private void writeTracksToFile(){
         FileOutputStream fos = null;
         try {
@@ -309,8 +315,8 @@ public class SpotifyToText extends Activity {
                 @Override
                 public void run() {
                     String text = messageWindow.getText().toString();
-                    text += "\nExported playlist to: \"" + "/" + FILE_PATH + "/" + playlistSelected + ".txt\"\n";
-                    text += "Exported " + tracksSize + " Songs from \"" + playlistSelected + "\":\n\n" + tracksStr;
+                    text += "\nTransferred Playlist to: \"" + "/" + FILE_PATH + "/" + playlistSelected + ".txt\"\n";
+                    text += "Transferred " + tracksSize + " Songs from \"" + playlistSelected + "\":\n\n" + tracksStr;
                     messageWindow.setText(text);
                 }
             });
@@ -329,6 +335,7 @@ public class SpotifyToText extends Activity {
     }
 
 
+    // Write file after permissions are given
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
@@ -353,5 +360,20 @@ public class SpotifyToText extends Activity {
             }
         }
         return;
+    }
+
+    // Send list of exported playlists back to Main Activity
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent();
+        if(isFirstExport){
+            intent.putExtra(MainActivity.SPOTIFY_TO_TEXT_PLAYLISTS, exportedNothing);
+            setResult(RESULT_CANCELED, intent);
+            finish();
+        } else {
+            intent.putExtra(MainActivity.SPOTIFY_TO_TEXT_PLAYLISTS, exportedPlaylists);
+            setResult(RESULT_OK, intent);
+            finish();
+        }
     }
 }

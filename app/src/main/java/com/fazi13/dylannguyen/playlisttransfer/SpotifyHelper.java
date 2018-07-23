@@ -30,10 +30,11 @@ public class SpotifyHelper {
     private final static String IP_ADDRESS = MainActivity.IP_ADDRESS;
     private final static MediaType JSON = MainActivity.JSON;
 
-    public static void getSpotifyPlaylists(final String spotifyToken, final Activity activity){
+    // Gets Spotify Playlists from server and adds to Spinners
+    public static void getSpotifyPlaylists(final String spotifyToken, final Activity activity, final Spinner playlistSpinner){
         final TextView messageWindow = activity.findViewById(R.id.messageWindow);
-        JSONObject jsonObject = new JSONObject();
 
+        JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("spotify_token", spotifyToken);
         } catch (JSONException e) {
@@ -53,7 +54,6 @@ public class SpotifyHelper {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        //TextView messageWindow = findViewById(R.id.messageWindow);
                         String text = messageWindow.getText().toString();
                         messageWindow.setText(text + "An Error Occurred with the Server.\n");
                     }
@@ -68,11 +68,10 @@ public class SpotifyHelper {
                     activity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            //TextView messageWindow = findViewById(R.id.messageWindow);
                             String text = messageWindow.getText().toString();
                             Log.d("SpotifyHelper.java", myResponse);
                             messageWindow.setText(text + "Received Spotify Playlists from Server.\n");
-                            setPlaylistSpinner(myResponse, activity);
+                            setPlaylistSpinner(myResponse, activity, playlistSpinner);
                         }
                     });
                 } else {
@@ -80,7 +79,6 @@ public class SpotifyHelper {
                     activity.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            //TextView messageWindow = findViewById(R.id.messageWindow);
                             String text = messageWindow.getText().toString();
                             messageWindow.setText(text + "An Error Occurred with the Server.\n");
                         }
@@ -90,7 +88,8 @@ public class SpotifyHelper {
         });
     }
 
-    private static void setPlaylistSpinner(String playlist, final Activity activity){
+    // Set spinner data to playlists
+    private static void setPlaylistSpinner(String playlist, final Activity activity, final Spinner playlistSpinner){
         HashMap<String,String> playlist_map = new Gson().fromJson(playlist, new TypeToken<HashMap<String, String>>(){}.getType());
         String playlistStr = playlist_map.get("Spotify Playlists");
         final String[] playlists = playlistStr.split(", ");
@@ -99,16 +98,16 @@ public class SpotifyHelper {
             public void run() {
                 ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(activity, android.R.layout.simple_spinner_item, playlists);
                 arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                Spinner playlistSpinner = activity.findViewById(R.id.playlistSpinner);
                 playlistSpinner.setAdapter(arrayAdapter);
             }
         });
     }
 
+    // Sends playlist name to server and requests server to create a new playlist
     public static void createPlaylist(final String spotifyToken, final String playlist, final  Activity activity) {
         final TextView messageWindow = activity.findViewById(R.id.messageWindow);
-        JSONObject jsonObject = new JSONObject();
 
+        JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("spotify_token", spotifyToken);
             jsonObject.put("playlist_name", playlist);
@@ -144,7 +143,7 @@ public class SpotifyHelper {
                         @Override
                         public void run() {
                             String text = messageWindow.getText().toString();
-                            messageWindow.setText(text + "Created playlist \"" + playlist + "\"\n");
+                            messageWindow.setText(text + "\nCreated playlist \"" + playlist + "\"\n");
                         }
                     });
                 } else {

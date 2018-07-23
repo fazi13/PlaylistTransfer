@@ -9,7 +9,8 @@
     android:paddingRight="16dp"
     android:paddingTop="16dp"
     android:orientation="vertical"
-    tools:context=".SpotifyToText">
+    tools:context=".SpotifyToSpotify">
+
     <RelativeLayout
         android:layout_weight=".5"
         android:layout_width="match_parent"
@@ -21,30 +22,30 @@
             android:layout_height="match_parent">
 
             <TextView
-                android:id="@+id/selectText"
-                android:text="Select a Text File:"
+                android:id="@+id/selectFromPlaylist"
+                android:text="From this Playlist:"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent" />
 
             <Spinner
-                android:id="@+id/textSpinner"
+                android:id="@+id/fromPlaylistSpinner"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:layout_marginBottom="10dp"
-                android:layout_below="@+id/selectText"/>
+                android:layout_below="@+id/selectFromPlaylist"/>
 
             <CheckBox
                 android:id="@+id/checkBox"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/textSpinner"
+                android:layout_below="@id/fromPlaylistSpinner"
                 android:text="New Playlist?"
                 android:layout_marginBottom="10dp"/>
 
             <TextView
                 android:id="@+id/selectPlaylist"
-                android:text="Select a Playlist:"
+                android:text="To this Playlist:"
                 android:layout_height="wrap_content"
                 android:layout_width="match_parent"
                 android:layout_below="@id/checkBox" />
