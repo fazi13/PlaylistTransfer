@@ -46,7 +46,7 @@ public class MainActivity extends Activity implements SpotifyPlayer.Notification
     private String[] spotifyScopes = new String[]{"user-read-private", "playlist-read-private", "playlist-read-collaborative", "user-library-read", "playlist-modify-private", "playlist-modify-public"};
 
     // Server Connection vars
-    public static final String IP_ADDRESS = "http://192.168.0.116/";
+    public static final String IP_ADDRESS = "http://dylannguyen.me/";
     public static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     private OkHttpClient client;
 

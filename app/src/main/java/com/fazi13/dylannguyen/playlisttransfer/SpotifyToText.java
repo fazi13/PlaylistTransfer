@@ -211,7 +211,7 @@ public class SpotifyToText extends Activity {
             jsonObject.put("spotify_token", spotifyToken);
             jsonObject.put("playlist_name", playlistSelected);
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.e("SpotifyToText", e.toString());
         }
 
         RequestBody requestBody = RequestBody.create(JSON, jsonObject.toString());
@@ -228,7 +228,6 @@ public class SpotifyToText extends Activity {
                 SpotifyToText.this.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        //TextView messageWindow = findViewById(R.id.messageWindow);
                         String text = messageWindow.getText().toString();
                         messageWindow.setText(text + "An Error Occurred Connecting to the Server.\n");
                     }
@@ -278,7 +277,6 @@ public class SpotifyToText extends Activity {
                     SpotifyToText.this.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            //TextView messageWindow = findViewById(R.id.messageWindow);
                             String text = messageWindow.getText().toString();
                             messageWindow.setText(text + "An Error Occurred with the Server.\n");
                         }
@@ -299,25 +297,6 @@ public class SpotifyToText extends Activity {
             }
         });
     }
-
-    /*
-    private static boolean isExternalStorageAvailable() {
-        String extStorageState = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(extStorageState)) {
-            return true;
-        }
-        return false;
-    }
-
-    private boolean checkWritePermissions() {
-        int result = ContextCompat.checkSelfPermission(SpotifyToText.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-        return (result == PackageManager.PERMISSION_GRANTED);
-    }
-
-    private void requestWritePermissions() {
-        ActivityCompat.requestPermissions(SpotifyToText.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 458);
-    }
-    */
 
     private void writeTracksToFile(){
         FileOutputStream fos = null;

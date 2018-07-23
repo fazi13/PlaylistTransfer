@@ -26,9 +26,12 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class SpotifyHelper {
+    private final static OkHttpClient client = new OkHttpClient();
+    private final static String IP_ADDRESS = MainActivity.IP_ADDRESS;
+    private final static MediaType JSON = MainActivity.JSON;
+
     public static void getSpotifyPlaylists(final String spotifyToken, final Activity activity){
         final TextView messageWindow = activity.findViewById(R.id.messageWindow);
-        OkHttpClient client = new OkHttpClient();
         JSONObject jsonObject = new JSONObject();
 
         try {
@@ -102,23 +105,21 @@ public class SpotifyHelper {
         });
     }
 
-    public static void createPlaylist(final String spotifyToken, final String playlist) {
-        OkHttpClient client = new OkHttpClient();
-        final String IP_ADDRESS = MainActivity.IP_ADDRESS;
-        final MediaType JSON = MainActivity.JSON;
+    public static void createPlaylist(final String spotifyToken, final String playlist, final  Activity activity) {
+        final TextView messageWindow = activity.findViewById(R.id.messageWindow);
         JSONObject jsonObject = new JSONObject();
 
         try {
             jsonObject.put("spotify_token", spotifyToken);
             jsonObject.put("playlist_name", playlist);
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.e("SpotifyHelper.java", e.toString());
         }
 
 
         RequestBody requestBody = RequestBody.create(JSON, jsonObject.toString());
         Request request = new Request.Builder()
-                .url(IP_ADDRESS + "get_spotify_tracks")
+                .url(IP_ADDRESS + "create_spotify_playlist")
                 .post(requestBody)
                 .build();
 
@@ -126,14 +127,35 @@ public class SpotifyHelper {
             @Override
             public void onFailure(Call call, IOException e) {
                 Log.e("SpotifyHelper.java", e.toString());
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String text = messageWindow.getText().toString();
+                        messageWindow.setText(text + "An Error Occurred Connecting to the Server.\n");
+                    }
+                });
             }
 
             @Override
             public void onResponse(Call call, Response response) {
                 if(response.isSuccessful()){
                     Log.d("SpotifyHelper.java", response.toString());
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            String text = messageWindow.getText().toString();
+                            messageWindow.setText(text + "Created playlist \"" + playlist + "\"\n");
+                        }
+                    });
                 } else {
                     Log.e("SpotifyHelper.java", response.toString());
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            String text = messageWindow.getText().toString();
+                            messageWindow.setText(text + "An Error Occurred with the Server.\n");
+                        }
+                    });
                 }
             }
         });
