@@ -4,16 +4,21 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:paddingBottom="16dp"
-    android:paddingLeft="16dp"
-    android:paddingRight="16dp"
-    android:paddingTop="16dp"
     android:orientation="vertical"
-    tools:context=".SpotifyToText">
+    tools:context=".SpotifyToText"
+    android:id="@+id/spotifyToTextLayout">
+
+    <include
+        layout="@layout/toolbar"
+        android:id="@+id/toolbar"/>
+
     <RelativeLayout
         android:layout_weight=".5"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:paddingTop="10dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -48,9 +53,12 @@
     </RelativeLayout>
 
     <RelativeLayout
-    android:layout_weight=".5"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+        android:layout_weight=".5"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:paddingBottom="10dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -80,5 +88,4 @@
             </ScrollView>
         </LinearLayout>
     </RelativeLayout>
-
 </LinearLayout>

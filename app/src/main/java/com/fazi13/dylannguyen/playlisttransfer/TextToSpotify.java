@@ -6,14 +6,26 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -38,7 +50,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class TextToSpotify extends Activity {
+public class TextToSpotify extends AppCompatActivity {
     // Spotify vars
     private String spotifyToken = "";
     private String playlistSelected = "";
@@ -61,6 +73,10 @@ public class TextToSpotify extends Activity {
     private ImageButton exportButton;
     private Spinner textSpinner;
     private Spinner playlistSpinner;
+    private PopupWindow popupWindow;
+    private LayoutInflater layoutInflater;
+    private LinearLayout linearLayout;
+
     private boolean isNewPlaylist;
     private boolean isFirstExport;
     private boolean isExportable;
@@ -72,7 +88,11 @@ public class TextToSpotify extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_text_to_spotify);
 
-        setTitle("Text File to Spotify");
+        // Add custom toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        toolbar.setTitle("Spotify to Text File");
+        toolbar.setTitle("Text File to Spotify");
 
         Intent intent = getIntent();
         spotifyToken = intent.getStringExtra(MainActivity.SPOTIFY_TOKEN);
@@ -84,6 +104,7 @@ public class TextToSpotify extends Activity {
         playlistSpinner = findViewById(R.id.playlistSpinner);
         exportButton = findViewById(R.id.exportBtn);
         CheckBox checkBox = findViewById(R.id.checkBox);
+        linearLayout = findViewById(R.id.textToSpotifyLayout);
 
         isNewPlaylist = false;
         isFirstExport = true;
@@ -185,6 +206,39 @@ public class TextToSpotify extends Activity {
                 }
             }
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater mi = getMenuInflater();
+        mi.inflate(R.menu.menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.toolbar_help:
+                layoutInflater = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
+                ViewGroup container = (ViewGroup) layoutInflater.inflate(R.layout.activity_help_pop_up, null);
+                DisplayMetrics dm = new DisplayMetrics();
+                getWindowManager().getDefaultDisplay().getMetrics(dm);
+                int width = (int) (dm.widthPixels * 0.75);
+                int height = (int) (dm.heightPixels * 0.5);
+
+                popupWindow = new PopupWindow(container, width, height, true);
+                popupWindow.setElevation(10);
+                popupWindow.showAtLocation(linearLayout, Gravity.CENTER, 0, 0);
+                container.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View view, MotionEvent motionEvent) {
+                        popupWindow.dismiss();
+                        return false;
+                    }
+                });
+                break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     // Refresh Text Files and Spotify Playlists

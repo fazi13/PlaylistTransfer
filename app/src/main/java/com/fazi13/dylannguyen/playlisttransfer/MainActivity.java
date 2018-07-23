@@ -3,11 +3,23 @@ package com.fazi13.dylannguyen.playlisttransfer;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,7 +37,7 @@ import com.spotify.sdk.android.player.SpotifyPlayer;
 
 import okhttp3.MediaType;
 
-public class MainActivity extends Activity implements SpotifyPlayer.NotificationCallback, ConnectionStateCallback{
+public class MainActivity extends AppCompatActivity implements SpotifyPlayer.NotificationCallback, ConnectionStateCallback{
     // Spotify vars
     private static final String CLIENT_ID = "5047539c966a4a5ca3e43e6b47937493";
     private static final String REDIRECT_URI = "playlisttransfer://callback";
@@ -41,11 +53,15 @@ public class MainActivity extends Activity implements SpotifyPlayer.Notification
     // YouTube vars
 
     // Export vars
-    String exportFromHere;
-    String exportToHere;
+    private String exportFromHere;
+    private String exportToHere;
 
     // UI vars
-    TextView messageWindow;
+    private TextView messageWindow;
+    private PopupWindow popupWindow;
+    private LayoutInflater layoutInflater;
+    private LinearLayout linearLayout;
+
 
     // Activity vars
     public static final String SPOTIFY_TOKEN = "com.fazi13.dylannguyen.playlisttransfer.SPOTIFY_TOKEN";
@@ -57,6 +73,10 @@ public class MainActivity extends Activity implements SpotifyPlayer.Notification
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        // Add custom toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         TextView titleWindow = findViewById(R.id.titleWindow);
         messageWindow = findViewById(R.id.messageWindow);
         TextView loginText = findViewById(R.id.loginText);
@@ -65,6 +85,7 @@ public class MainActivity extends Activity implements SpotifyPlayer.Notification
         ImageButton exportButton = findViewById(R.id.exportBtn);
         Spinner fromSpinner = findViewById(R.id.fromSpinner);
         Spinner toSpinner = findViewById(R.id.toSpinner);
+        linearLayout = findViewById(R.id.mainLayout);
 
         loginText.setText("Please login:");
         titleWindow.setText("Output:");
@@ -155,6 +176,39 @@ public class MainActivity extends Activity implements SpotifyPlayer.Notification
                 }
             }
         });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater mi = getMenuInflater();
+        mi.inflate(R.menu.menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.toolbar_help:
+                layoutInflater = (LayoutInflater) getApplicationContext().getSystemService(LAYOUT_INFLATER_SERVICE);
+                ViewGroup container = (ViewGroup) layoutInflater.inflate(R.layout.activity_help_pop_up, null);
+                DisplayMetrics dm = new DisplayMetrics();
+                getWindowManager().getDefaultDisplay().getMetrics(dm);
+                int width = (int) (dm.widthPixels * 0.75);
+                int height = (int) (dm.heightPixels * 0.5);
+
+                popupWindow = new PopupWindow(container, width, height, true);
+                popupWindow.setElevation(10);
+                popupWindow.showAtLocation(linearLayout, Gravity.CENTER, 0, 0);
+                container.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View view, MotionEvent motionEvent) {
+                        popupWindow.dismiss();
+                        return false;
+                    }
+                });
+                break;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     public void openSpotifyToText(){

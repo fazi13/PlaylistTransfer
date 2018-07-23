@@ -5,4 +5,11 @@
         <item>Spotify</item>
         <item>Text File</item>
     </string-array>
+    <string name="help_list">
+        <li>Unable to login to Spotify?\nTry logging out of the Spotify app.</li>\n\n
+        <li>Playlist transfer not working?\nTry refreshing your login token by clicking login again.</li>\n\n
+        <li>Not able to find files to import?\nMake sure the files are located in the \"root/Playlist Transfer/Import\" folder.</li>\n\n
+        <li>How do I format the files to import?\nThey need to be a \".txt\" file formatted as \"Artist - Song Name\"</li>\n\n
+        <li>Where are playlist .txt files saved to?\nCheck the \"root/Playlist Transfer/Export\" folder.</li>
+    </string>
 </resources>

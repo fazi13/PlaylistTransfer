@@ -1,8 +1,16 @@
 <resources>
 
     <!-- Base application theme. -->
-    <style name="AppTheme" parent="android:Theme.Material.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
+    <style name="AppTheme" parent="android:Theme.Material.Light.DarkActionBar"></style>
+    <!-- Customize your theme here. -->
+    <style name="CustomToolbarStyle" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
+        <item name="android:background">@color/colorPrimaryDark</item>
+    </style>
+
+    <style name="CustomPopUpStyle" parent="ThemeOverlay.AppCompat.Light">
+        <item name="android:background">@color/colorAccent</item>
+        <item name="overlapAnchor">false</item>
+        <item name="android:dropDownVerticalOffset">-4dp</item>
     </style>
 
 </resources>
